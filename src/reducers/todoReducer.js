@@ -1,9 +1,16 @@
-export const initialState = [
-  {id: 1, text: "the first todo", done: false},
-  {id: 2, text: "the second todo", done: false},
-];
+export const initialState = [];
 
-// reducer is a pure function that define and gather all state update logic
 export const todoReducer = (state, action) => {
-  return state;
+    switch (action.type) {
+        case 'ADD_TODO':
+            return [...state, { text: action.payload, completed: false }];
+        case 'TOGGLE_TODO':
+            return state.map((todo, index) =>
+                index === action.payload ? { ...todo, completed: !todo.completed } : todo
+            );
+        case 'DELETE_TODO':
+            return state.filter((_, index) => index !== action.payload);
+        default:
+            return state;
+    }
 };

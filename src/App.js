@@ -1,20 +1,20 @@
-import { useReducer } from "react";
-import './App.css';
-import TodoList from "./components/TodoList";
-import { initialState, todoReducer } from "./reducers/todoReducer";
-import { TodoContext } from "./contexts/TodoContext";
+import React, { useReducer } from 'react';
+import { TodoContext } from './context/TodoContext';
+import { todoReducer, initialState } from './reducers/todoReducer';
+import TodoList from './components/TodoList';
+import './styles/App.css';
 
 function App() {
-  // the Hooks API manage component data state
-  const [state, dispatch] = useReducer(todoReducer, initialState);
+    const [state, dispatch] = useReducer(todoReducer, initialState);
 
-  return (
-    <div className="App">
-      <TodoContext.Provider value={{state, dispatch}}>
-        <TodoList/>
-      </TodoContext.Provider>
-    </div>
-  );
+    return (
+        <TodoContext.Provider value={{ state, dispatch }}>
+            <div className="App">
+                <h1>Todo App</h1>
+                <TodoList />
+            </div>
+        </TodoContext.Provider>
+    );
 }
 
 export default App;
