@@ -1,16 +1,20 @@
+// src/reducers/TodoReducer.js
+
 export const initialState = [];
 
-export const todoReducer = (state, action) => {
+export function todoReducer(state, action) {
     switch (action.type) {
         case 'ADD_TODO':
-            return [...state, { text: action.payload, done: false }];
-        case 'TOGGLE_TODO':
-            return state.map((todo, index) =>
-                index === action.payload ? { ...todo, done: !todo.done } : todo
-            );
+            return [...state,action.todo];
         case 'DELETE_TODO':
-            return state.filter((_, index) => index !== action.payload);
+            return state.filter(todo =>todo.id!== action.payload);
+        case 'TOGGLE_TODO':
+            return state.map((todo) =>
+                todo.id === action.payload ? { ...todo, done: !todo.done } : todo
+            );
+        case 'LOAD_TODO':
+            return action.todos;
         default:
             return state;
     }
-};
+}

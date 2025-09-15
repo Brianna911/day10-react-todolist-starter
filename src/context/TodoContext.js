@@ -3,11 +3,12 @@ import { todoReducer, initialState } from '../reducers/TodoReducer';
 
 export const TodoContext = createContext();
 
-export const TodoProvider = ({ children }) => {
-    const [todos, dispatch] = useReducer(todoReducer, initialState);
+export function TodoProvider({ children }) {
+    const [state, dispatch] = useReducer(todoReducer, initialState);
+
     return (
-        <TodoContext.Provider value={{ todos, dispatch }}>
+        <TodoContext.Provider value={{ state, dispatch }}>
             {children}
         </TodoContext.Provider>
     );
-};
+}

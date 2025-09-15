@@ -1,44 +1,68 @@
-import React, { useReducer, createContext, useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import './TodoList.css';
-
-const TodoContext = createContext();
-
-const initialState = [];
-
-function todoReducer(state, action) {
-    switch (action.type) {
-        case 'ADD_TODO':
-            return [...state, { text: action.payload, done: false }];
-        case 'DELETE_TODO':
-            return state.filter((_, index) => index !== action.payload);
-        case 'TOGGLE_TODO':
-            return state.map((todo, index) =>
-                index === action.payload ? { ...todo, done: !todo.done } : todo
-            );
-        default:
-            return state;
-    }
-}
-
-function TodoProvider({ children }) {
-    const [state, dispatch] = useReducer(todoReducer, initialState);
-    return (
-        <TodoContext.Provider value={{ state, dispatch }}>
-            {children}
-        </TodoContext.Provider>
-    );
-}
+import {getTodos, createTodos, deteleTodos, updateTodos} from '../api/api';
+import { TodoContext } from '../context/TodoContext';
 
 function TodoList() {
     const { state, dispatch } = useContext(TodoContext);
     const [input, setInput] = useState('');
 
-    const handleAdd = () => {
-        if (input.trim()) {
-            dispatch({ type: 'ADD_TODO', payload: input });
+    const [editTodo, setEditTodo] = useState(null); // 当前正在编辑的 todo
+    const [editText, setEditText] = useState('');   //
+
+    const handleAdd = async () => {
+        if (input && input.trim()) {
+            const newTodo = {
+                done: false,
+                text: input.trim()
+            }
+            const response = await createTodos(newTodo);
+            console.log(response)
+            dispatch({ type: 'ADD_TODO', todo: response.data });
             setInput('');
         }
     };
+
+    const handleCancelEdit = () => {
+        setEditTodo(null);
+        setEditText('');
+    };
+
+    const handleUpdate = async () => {
+        if (editText.trim()) {
+            const updated = { ...editTodo, text: editText };
+            await updateTodos(editTodo.id, updated);
+            dispatch({ type: 'LOAD_TODO', todos: state.map(t => t.id === editTodo.id ? updated : t) });
+            setEditTodo(null);
+            setEditText('');
+        }
+    };
+
+
+    const DeleteTodo = async (id) => {
+        try {
+            await deteleTodos(id);
+            dispatch({ type: 'DELETE_TODO', payload: id }); // ✅ 修复：使用正确的 action type
+        } catch (error) {
+            console.error('删除失败:', error);
+        }
+    };
+
+    const ToggleTodo = async (todo) => {
+        try {
+            const updated = { ...todo, done: !todo.done };
+            await updateTodos(todo.id,updated);
+            dispatch({ type: 'TOGGLE_TODO', payload: todo.id }); // ✅ 使用 todo.id
+        } catch (error) {
+            console.error('更新失败:', error);
+        }
+    };
+
+    useEffect(() => {
+        getTodos().then(response => {
+            dispatch({ type: 'LOAD_TODO', todos: response.data });
+        });
+    }, [dispatch]);
 
     return (
         <div className="todo-container">
@@ -51,35 +75,54 @@ function TodoList() {
                     placeholder="Enter a task"
                 />
                 <div>
-                    <button className={"add-button"} onClick={handleAdd}>Add</button>
+                    <button className="add-button" onClick={handleAdd}>Add</button>
                 </div>
             </div>
             <ul className="todo-list">
                 {state.map((todo, index) => (
-                    <li key={index} className="todo-item">
-            <span
-                className={todo.done ? 'done' : ''}
-                onClick={() => dispatch({ type: 'TOGGLE_TODO', payload: index })}
-            >
-              {todo.text}
-            </span>
+                    <li key={todo.id || index} className="todo-item">
+                        <span
+                            className={todo.done ? 'done' : ''}
+                            onClick={() => ToggleTodo(todo)}
+                            onDoubleClick={() => {
+                                setEditTodo(todo);
+                                setEditText(todo.text);
+                            }}
+
+                        >
+                            {todo.text}
+                        </span>
                         <button
                             className="delete-button"
-                            onClick={() => dispatch({ type: 'DELETE_TODO', payload: index })}
+                            onClick={() => DeleteTodo(todo.id)} // ✅ 使用 todo.id 而不是 index
                         >
                             delete
                         </button>
+
                     </li>
                 ))}
+
+                {/* 编辑弹窗 */}
+                {editTodo && (
+                    <div className="modal">
+                        <div className="modal-content">
+                            <h3>Edit Todo</h3>
+                            <input
+                                type="text"
+                                value={editText}
+                                onChange={(e) => setEditText(e.target.value)}
+                            />
+                            <div className="modal-buttons">
+                                <button onClick={handleCancelEdit}>Cancel</button>
+                                <button onClick={handleUpdate}>OK</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
             </ul>
         </div>
     );
 }
 
-export default function App() {
-    return (
-        <TodoProvider>
-            <TodoList />
-        </TodoProvider>
-    );
-}
+export default TodoList;
